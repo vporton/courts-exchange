@@ -1,5 +1,6 @@
 pragma solidity ^0.6.0;
 
+import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import './ABDKMath64x64.sol';
 
 contract Exchange {
@@ -11,7 +12,7 @@ contract Exchange {
         uint256 token;
     }
 
-    function tokenHash(Token token) public returns (uint256) {
+    function tokenHash(Token token) public pure returns (uint256) {
         if (token.tokenType == ERC20) {
             return keccak256(token.tokenType, token.contractAddress);
         } else {
@@ -64,10 +65,12 @@ contract Exchange {
     }
 
     function exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data) external {
-        int128 rate = divi(rates[tokenHash(_to)], divi(rates[tokenHash(_from)]));
+        uint256 _fromHash = tokenHash(_from);
+        uint256 _toHash = tokenHash(_to);
+        int128 rate = divi(rates[_toHash], rates[_fromHash]);
         uint256 _toAmount = mulu(rate, _fromAmount);
 
-        require(limit[tokenHash(_to)] >= _toAmount, "Token limit exceeded.");
+        limit[_toHash] = limit[_toHash].sub(_toAmount);
 
         if (_from.tokenType == ERC20) {
             IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
@@ -82,7 +85,5 @@ contract Exchange {
         } else /*if (_to.tokenType == REWARD_COURTS)*/ {
             RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
         }
-
-        limit[tokenHash(_to)] -= _toAmount; // TODO: Use safe arithmetic instead of require() above.
     }
 }
