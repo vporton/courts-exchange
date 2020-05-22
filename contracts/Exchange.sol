@@ -47,7 +47,7 @@ contract Exchange {
 
     function addToTokenLimit(Token token, uint256 _limit) external {
         uint256 hash = tokenHash(token);
-        limits[hash] += _limit; // FIXME: safe arithmetic
+        limits[hash] = limits[hash].add(_limit);
     }
 
     function setTokenLimits(Token[] _tokens, uint256[] _limits) external {
@@ -60,7 +60,7 @@ contract Exchange {
     function addToTokenLimits(Token[] _tokens, uint256[] _limits) external {
         for (uint j = 0; j < _tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
-            limits[hash] += _limits[j]; // FIXME: safe arithmetics
+            limits[hash] = limits[hash].add(_limits[j]);
         }
     }
 
