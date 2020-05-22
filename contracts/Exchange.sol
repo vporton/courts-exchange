@@ -1,7 +1,7 @@
 pragma solidity ^6.0.0;
 
 contract Exchange {
-    enum TokenType : uint8 { ERC20, ERC1155 }
+    enum TokenType : uint8 { ERC20, ERC1155, RewardCourts }
 
     struct Token {
         TokenType tokenType;
@@ -71,6 +71,7 @@ contract Exchange {
                 IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
                 break;
             case ERC1155:
+            case RewardCourts:
                 ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
                 break;
         }
@@ -81,6 +82,9 @@ contract Exchange {
                 break;
             case ERC1155:
                 ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
+                break;
+            case RewardCourts:
+                RewardCourtsERC1155(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
                 break;
         }
 
