@@ -72,13 +72,13 @@ contract Exchange {
         if (_from.tokenType == ERC20) {
             IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
         } else {
-            ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
+            IERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
         }
 
         if (_to.tokenType == ERC20) {
             IERC20(_to.contractAddress).transferFrom(this, msg.sender, _toAmount);
         } else if (_to.tokenType == ERC1155) {
-            ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
+            IERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
         } else /*if (_to.tokenType == REWARD_COURTS)*/ {
             RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
         }
