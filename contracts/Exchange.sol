@@ -1,7 +1,9 @@
-pragma solidity ^6.0.0;
+pragma solidity ^0.6.0;
+
+import './ABDKMath64x64.sol';
 
 contract Exchange {
-    enum TokenType : uint8 { ERC20, ERC1155, RewardCourts }
+    enum TokenType { ERC20, ERC1155, RewardCourts }
 
     struct Token {
         TokenType tokenType;
@@ -9,7 +11,7 @@ contract Exchange {
         uint256 token;
     }
 
-    uint256 tokenHash(Token token) returns (uint256) {
+    function tokenHash(Token token) returns (uint256) {
         if (token.tokenType == ERC20) {
             return keccak256(token.tokenType, token.contractAddress);
         } else {
@@ -17,15 +19,15 @@ contract Exchange {
         }
     }
 
-    // token hash => value
-    mapping (uint256 => uint256) rates;
+    // token hash => value (ABDKMath fixed point)
+    mapping (uint256 => int128) rates;
 
     // token hash => LIMIT
     mapping (uint256 => uint256) limits;
 
     Token[] allTokens;
 
-    void setAllTokenRates(Token[] _tokens, uint256[] _rates) {
+    function setAllTokenRates(Token[] _tokens, uint256[] _rates) {
         for (uint i=0; i<allTokens.length; ++i) {
             uint256 hash = tokenHash(_tokens[i]);
             limits[hash] = 0; // "nullify" old tokens
@@ -37,36 +39,37 @@ contract Exchange {
         }
     }
 
-    void setTokenLimit(Token token, uint256 _limit) {
+    function setTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
         limits[hash] = _limit;
     }
 
-    void addToTokenLimit(Token token, uint256 _limit) {
+    function addToTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
         limits[hash] += _limit; // FIXME: safe arithmetic
     }
 
-    void setTokenLimits(Token[] _tokens, uint256[] _limits) {
+    function setTokenLimits(Token[] _tokens, uint256[] _limits) {
         for (uint j=0; j<_tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
             limits[hash] = _limits[j];
         }
     }
 
-    void addToTokenLimits(Token[] _tokens, uint256[] _limits) {
+    function addToTokenLimits(Token[] _tokens, uint256[] _limits) {
         for (uint j=0; j<_tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
             limits[hash] += _limits[j]; // FIXME: safe arithmetics
         }
     }
 
-    void exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data = []) {
-        uint256 _toAmount = 0; // FIXME: Use safe arithmetic instead.
+    function exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data) {
+        int128 rate = divi(rates[tokenHash(_to)], divi(rates[tokenHash(_from)]));
+        uint256 _toAmount = mulu(rate, _fromAmount);
 
         require(limit[tokenHash(_to)] >= _toAmount, "Token limit exceeded.");
 
-        switch (_from.tokenType)
+        switch (_from.tokenType) {
             case ERC20:
                 IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
                 break;
