@@ -2,7 +2,8 @@
  * ABDK Math 64.64 Smart Contract Library.  Copyright © 2019 by ABDK Consulting.
  * Author: Mikhail Vladimirov <mikhail.vladimirov@gmail.com>
  */
-pragma solidity ^0.5.7;
+pragma solidity ^0.4.24;
+//pragma solidity ^0.5.7;
 
 /**
  * Smart contract library of mathematical functions operating with signed

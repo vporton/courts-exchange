@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity 0.4.24;
 
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import './ABDKMath64x64.sol';
@@ -13,7 +13,7 @@ contract Exchange {
     }
 
     function tokenHash(Token token) public pure returns (uint256) {
-        if (token.tokenType == ERC20) {
+        if (token.tokenType == TokenType.ERC20) {
             return keccak256(token.tokenType, token.contractAddress);
         } else {
             return keccak256(token.tokenType, token.contractAddress, token.token);
@@ -35,8 +35,8 @@ contract Exchange {
         }
         allTokens = _tokens;
         for (uint j = 0; j < _tokens.length; ++j) {
-            uint256 hash = tokenHash(_tokens[j]);
-            rates[hash] = _rates[j];
+            uint256 hash2 = tokenHash(_tokens[j]);
+            rates[hash2] = _rates[j];
         }
     }
 
@@ -64,7 +64,7 @@ contract Exchange {
         }
     }
 
-    function exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data) external {
+    function exchange(Token _from, Token _to, uint256 _fromAmount, bytes _data) external {
         uint256 _fromHash = tokenHash(_from);
         uint256 _toHash = tokenHash(_to);
         int128 rate = divi(rates[_toHash], rates[_fromHash]);
@@ -72,17 +72,17 @@ contract Exchange {
 
         limit[_toHash] = limit[_toHash].sub(_toAmount);
 
-        if (_from.tokenType == ERC20) {
+        if (_from.tokenType == TokenType.ERC20) {
             IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
         } else {
             IERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
         }
 
-        if (_to.tokenType == ERC20) {
+        if (_to.tokenType == TokenType.ERC20) {
             IERC20(_to.contractAddress).transferFrom(this, msg.sender, _toAmount);
-        } else if (_to.tokenType == ERC1155) {
+        } else if (_to.tokenType == TokenType.ERC1155) {
             IERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
-        } else /*if (_to.tokenType == REWARD_COURTS)*/ {
+        } else /*if (_to.tokenType == TokenType.REWARD_COURTS)*/ {
             RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
         }
     }
