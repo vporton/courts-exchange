@@ -1,0 +1,3 @@
+[submodule "rewardcourts"]
+	path = rewardcourts
+	url = git@github.com:vporton/courts.git
