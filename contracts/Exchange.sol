@@ -1,5 +1,5 @@
 pragma solidity 0.4.24;
-pragma experimental ABIEncoderV2;
+// pragma experimental ABIEncoderV2;
 
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import './ABDKMath64x64.sol';
