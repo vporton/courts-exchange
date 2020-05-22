@@ -1,7 +1,7 @@
 pragma solidity ^6.0.0;
 
-contract Exchange {
-    enum TokenType : uint8 { ERC20, ERC721, ERC1155 }
+contract Exchange :  {
+    enum TokenType : uint8 { ERC20, ERC1155 }
 
     struct Token {
         TokenType tokenType;
@@ -25,11 +25,19 @@ contract Exchange {
 
     Token[] allTokens;
 
-    // FIXME: The argument of setTokenRates() ordered accordingly allTokens (unsafe as allTokens may change), but setTokenLimit uses Token. Inconsistency
-
-    void setTokenRates(uint256[] _rates) {
-        // TODO
+    void setAllTokenRates(Token[] _tokens, uint256[] _rates) {
+        for (uint i=0; i<allTokens.length; ++i) {
+            uint256 hash = tokenHash(_tokens[i]);
+            limits[hash] = 0; // "nullify" old tokens
+        }
+        allTokens = _tokens;
+        for (uint j=0; j<_tokens.length; ++j) {
+            uint256 hash = tokenHash(_tokens[j]);
+            rates[hash] = _rates[j];
+        }
     }
+
+    // TODO: set/add multiple tokens limits at once.
 
     void setTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
@@ -39,5 +47,29 @@ contract Exchange {
     void addToTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
         limits[hash] += _limit; // FIXME: safe arithmetic
+    }
+
+    void exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data = []) {
+        uint256 _toAmount = 0; // FIXME: Use safe arithmetic instead.
+
+        require(limit[tokenHash(_to)] >= _toAmount, "Token limit exceeded.");
+
+        switch (_from.tokenType)
+            case ERC20:
+                IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
+                break;
+            case ERC1155:
+                ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
+        }
+
+        switch (_to.tokenType)
+            case ERC20:
+                IERC20(_to.contractAddress).transferFrom(this, msg.sender, _toAmount);
+                break;
+            case ERC1155:
+                ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
+        }
+
+        limit[tokenHash(_to)] -= _toAmount; // TODO: Use safe arithmetic instead of require() above.
     }
 }
