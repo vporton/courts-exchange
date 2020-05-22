@@ -23,7 +23,7 @@ contract Exchange {
     // token hash => value (ABDKMath fixed point)
     mapping (uint256 => int128) public rates;
 
-    // token hash => LIMIT
+    // token hash => limit
     mapping (uint256 => uint256) public limits;
 
     Token[] public allTokens; // TODO: retrieval of this
