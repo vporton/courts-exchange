@@ -1,6 +1,6 @@
 pragma solidity ^6.0.0;
 
-contract Exchange :  {
+contract Exchange {
     enum TokenType : uint8 { ERC20, ERC1155 }
 
     struct Token {
@@ -72,6 +72,7 @@ contract Exchange :  {
                 break;
             case ERC1155:
                 ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
+                break;
         }
 
         switch (_to.tokenType)
@@ -80,6 +81,7 @@ contract Exchange :  {
                 break;
             case ERC1155:
                 ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
+                break;
         }
 
         limit[tokenHash(_to)] -= _toAmount; // TODO: Use safe arithmetic instead of require() above.
