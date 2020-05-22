@@ -1,9 +1,16 @@
 pragma solidity 0.4.24;
+pragma experimental ABIEncoderV2;
 
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import './ABDKMath64x64.sol';
+import './IERC20.sol';
+import '../rewardcourts/contracts/IERC1155.sol';
+import '../rewardcourts/contracts/RewardCourts.sol';
 
 contract Exchange {
+    using SafeMath for uint256;
+    using ABDKMath64x64 for int128;
+
     enum TokenType { ERC20, ERC1155, REWARD_COURTS }
 
     struct Token {
@@ -14,9 +21,9 @@ contract Exchange {
 
     function tokenHash(Token token) public pure returns (uint256) {
         if (token.tokenType == TokenType.ERC20) {
-            return keccak256(token.tokenType, token.contractAddress);
+            return uint256(keccak256(token.tokenType, token.contractAddress));
         } else {
-            return keccak256(token.tokenType, token.contractAddress, token.token);
+            return uint256(keccak256(token.tokenType, token.contractAddress, token.token));
         }
     }
 
@@ -28,7 +35,7 @@ contract Exchange {
 
     Token[] public allTokens; // TODO: retrieval of this
 
-    function setAllTokenRates(Token[] _tokens, uint256[] _rates) external {
+    function setAllTokenRates(Token[] _tokens, int128[] _rates) external {
         for (uint i = 0; i < allTokens.length; ++i) {
             uint256 hash = tokenHash(_tokens[i]);
             limits[hash] = 0; // "nullify" old tokens
@@ -67,10 +74,10 @@ contract Exchange {
     function exchange(Token _from, Token _to, uint256 _fromAmount, bytes _data) external {
         uint256 _fromHash = tokenHash(_from);
         uint256 _toHash = tokenHash(_to);
-        int128 rate = divi(rates[_toHash], rates[_fromHash]);
-        uint256 _toAmount = mulu(rate, _fromAmount);
+        int128 rate = rates[_toHash].divi(rates[_fromHash]);
+        uint256 _toAmount = rate.mulu(_fromAmount);
 
-        limit[_toHash] = limit[_toHash].sub(_toAmount);
+        limits[_toHash] = limits[_toHash].sub(_toAmount);
 
         if (_from.tokenType == TokenType.ERC20) {
             IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
@@ -83,7 +90,8 @@ contract Exchange {
         } else if (_to.tokenType == TokenType.ERC1155) {
             IERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
         } else /*if (_to.tokenType == TokenType.REWARD_COURTS)*/ {
-            RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
+            uint128[] memory _courtsPath = new uint128[](0);
+            RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, _courtsPath);
         }
     }
 }
