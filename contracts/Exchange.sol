@@ -37,8 +37,6 @@ contract Exchange :  {
         }
     }
 
-    // TODO: set/add multiple tokens limits at once.
-
     void setTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
         limits[hash] = _limit;
@@ -47,6 +45,20 @@ contract Exchange :  {
     void addToTokenLimit(Token token, uint256 _limit) {
         uint256 hash = tokenHash(token);
         limits[hash] += _limit; // FIXME: safe arithmetic
+    }
+
+    void setTokenLimits(Token[] _tokens, uint256[] _limits) {
+        for (uint j=0; j<_tokens.length; ++j) {
+            uint256 hash = tokenHash(_tokens[j]);
+            limits[hash] = _limits[j];
+        }
+    }
+
+    void addToTokenLimits(Token[] _tokens, uint256[] _limits) {
+        for (uint j=0; j<_tokens.length; ++j) {
+            uint256 hash = tokenHash(_tokens[j]);
+            limits[hash] += _limits[j]; // FIXME: safe arithmetics
+        }
     }
 
     void exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data = []) {
