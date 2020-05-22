@@ -11,7 +11,7 @@ contract Exchange {
         uint256 token;
     }
 
-    function tokenHash(Token token) returns (uint256) {
+    function tokenHash(Token token) public returns (uint256) {
         if (token.tokenType == ERC20) {
             return keccak256(token.tokenType, token.contractAddress);
         } else {
@@ -20,50 +20,50 @@ contract Exchange {
     }
 
     // token hash => value (ABDKMath fixed point)
-    mapping (uint256 => int128) rates;
+    mapping (uint256 => int128) public rates;
 
     // token hash => LIMIT
-    mapping (uint256 => uint256) limits;
+    mapping (uint256 => uint256) public limits;
 
-    Token[] allTokens;
+    Token[] public allTokens; // TODO: retrieval of this
 
-    function setAllTokenRates(Token[] _tokens, uint256[] _rates) {
-        for (uint i=0; i<allTokens.length; ++i) {
+    function setAllTokenRates(Token[] _tokens, uint256[] _rates) external {
+        for (uint i = 0; i < allTokens.length; ++i) {
             uint256 hash = tokenHash(_tokens[i]);
             limits[hash] = 0; // "nullify" old tokens
         }
         allTokens = _tokens;
-        for (uint j=0; j<_tokens.length; ++j) {
+        for (uint j = 0; j < _tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
             rates[hash] = _rates[j];
         }
     }
 
-    function setTokenLimit(Token token, uint256 _limit) {
+    function setTokenLimit(Token token, uint256 _limit) external {
         uint256 hash = tokenHash(token);
         limits[hash] = _limit;
     }
 
-    function addToTokenLimit(Token token, uint256 _limit) {
+    function addToTokenLimit(Token token, uint256 _limit) external {
         uint256 hash = tokenHash(token);
         limits[hash] += _limit; // FIXME: safe arithmetic
     }
 
-    function setTokenLimits(Token[] _tokens, uint256[] _limits) {
-        for (uint j=0; j<_tokens.length; ++j) {
+    function setTokenLimits(Token[] _tokens, uint256[] _limits) external {
+        for (uint j = 0; j < _tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
             limits[hash] = _limits[j];
         }
     }
 
-    function addToTokenLimits(Token[] _tokens, uint256[] _limits) {
-        for (uint j=0; j<_tokens.length; ++j) {
+    function addToTokenLimits(Token[] _tokens, uint256[] _limits) external {
+        for (uint j = 0; j < _tokens.length; ++j) {
             uint256 hash = tokenHash(_tokens[j]);
             limits[hash] += _limits[j]; // FIXME: safe arithmetics
         }
     }
 
-    function exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data) {
+    function exchange(Token _from, Token _to, uint256 _fromAmount, bytes calldata _data) external {
         int128 rate = divi(rates[tokenHash(_to)], divi(rates[tokenHash(_from)]));
         uint256 _toAmount = mulu(rate, _fromAmount);
 
