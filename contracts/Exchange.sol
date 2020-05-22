@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 import './ABDKMath64x64.sol';
 
 contract Exchange {
-    enum TokenType { ERC20, ERC1155, RewardCourts }
+    enum TokenType { ERC20, ERC1155, REWARD_COURTS }
 
     struct Token {
         TokenType tokenType;
@@ -69,26 +69,18 @@ contract Exchange {
 
         require(limit[tokenHash(_to)] >= _toAmount, "Token limit exceeded.");
 
-        switch (_from.tokenType) {
-            case ERC20:
-                IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
-                break;
-            case ERC1155:
-            case RewardCourts:
-                ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
-                break;
+        if (_from.tokenType == ERC20) {
+            IERC20(_from.contractAddress).transferFrom(msg.sender, this, _fromAmount);
+        } else {
+            ERC1155(_from.contractAddress).safeTransferFrom(msg.sender, this, _from.token, _fromAmount, _data);
         }
 
-        switch (_to.tokenType)
-            case ERC20:
-                IERC20(_to.contractAddress).transferFrom(this, msg.sender, _toAmount);
-                break;
-            case ERC1155:
-                ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
-                break;
-            case RewardCourts:
-                RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
-                break;
+        if (_to.tokenType == ERC20) {
+            IERC20(_to.contractAddress).transferFrom(this, msg.sender, _toAmount);
+        } else if (_to.tokenType == ERC1155) {
+            ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
+        } else /*if (_to.tokenType == REWARD_COURTS)*/ {
+            RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
         }
 
         limit[tokenHash(_to)] -= _toAmount; // TODO: Use safe arithmetic instead of require() above.
