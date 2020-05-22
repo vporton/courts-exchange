@@ -84,7 +84,7 @@ contract Exchange {
                 ERC1155(_to.contractAddress).safeTransferFrom(this, msg.sender, _to.token, _toAmount, _data);
                 break;
             case RewardCourts:
-                RewardCourtsERC1155(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
+                RewardCourts(_to.contractAddress).mint(msg.sender, _to.token, _toAmount, _data, []);
                 break;
         }
 
